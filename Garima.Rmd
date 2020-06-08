@@ -1,0 +1,444 @@
+---
+title: "R Notebook"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+####### Business Understanding #######
+#The main aim of this project is to predict the future situation of the patient whether he or she is going to live or die.
+```
+
+```{r}
+#loads the library
+library(caret)
+library(tidyverse)
+library(dplyr)
+library(ggplot2)
+library(e1071)
+library(caret)
+library(gmodels)
+library(corrplot)
+library(SparseM)
+library(kernlab)
+
+#loads the data
+(hepatitis <- read.csv("~/Downloads/hepatitis", sep = ","))
+
+#adding names of columns
+names(hepatitis) <- c("Class", "AGE", "SEX", "STEROID", "ANTIVIRALS", "FATIGUE", "MALAISE", "ANOREXIA", "LIVER BIG", "LIVER FIRM", "SPLEEN PALPABLE", "SPIDERS", "ASCITES", "VARICES", "BILIRUBIN", "eALK PHOSPHATE", "SGOT", "ALBUMIN", "PROTIME", "HISTOLOGY")
+
+#gives the structure of the dataset
+str(hepatitis)
+
+#gives the summary of the dataset
+summary(hepatitis)
+
+#changes factor class to numeric
+for (i in c(15:19)) {
+  hepatitis[,i] <- as.numeric(hepatitis[,i])
+}
+```
+
+```{r}
+####### Imputation of Missing Values #######
+
+hepatitis[hepatitis == "?"] <- NA
+
+#finding the numbers 
+sum(is.na(hepatitis))
+
+### NA values for steroid
+
+getmode <- function(v) {
+   uniqv <- unique(v)
+   uniqv[which.max(tabulate(match(v, uniqv)))]
+}
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$STEROID[!is.na(hepatitis$STEROID)]
+
+#finding out mode from cleaned dataset without having NA
+resultSteroid <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+SteroidNa <- is.na(hepatitis$STEROID)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$STEROID[SteroidNa] <- resultSteroid
+
+### NA values for Fatigue
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$FATIGUE[!is.na(hepatitis$FATIGUE)]
+
+#finding out mode from cleaned dataset without having NA
+resultFatigue <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+SteroidFatigue <- is.na(hepatitis$FATIGUE)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$FATIGUE[SteroidFatigue] <- resultFatigue
+
+### NA values for Malaise
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$MALAISE[!is.na(hepatitis$MALAISE)]
+
+#finding out mode from cleaned dataset without having NA
+resultMalaise <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$MALAISE)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$MALAISE[Na] <- resultMalaise
+
+### NA values for Anorexia
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$ANOREXIA[!is.na(hepatitis$ANOREXIA)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$ANOREXIA)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$ANOREXIA[Na] <- result
+
+### NA values for `Liver Big`
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$`LIVER BIG`[!is.na(hepatitis$`LIVER BIG`)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$`LIVER BIG`)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$`LIVER BIG`[Na] <- result
+
+### NA values for `Liver Firm`
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$`LIVER FIRM`[!is.na(hepatitis$`LIVER FIRM`)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$`LIVER FIRM`)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$`LIVER FIRM`[Na] <- result
+
+### NA values for `Spleen Palpable`
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$`SPLEEN PALPABLE`[!is.na(hepatitis$`SPLEEN PALPABLE`)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$`SPLEEN PALPABLE`)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$`SPLEEN PALPABLE`[Na] <- result
+
+### NA values for spiders
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$SPIDERS[!is.na(hepatitis$SPIDERS)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$SPIDERS)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$SPIDERS[Na] <- result
+
+### NA values for Ascites
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$ASCITES[!is.na(hepatitis$ASCITES)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$ASCITES)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$ASCITES[Na] <- result
+
+### NA values for varices
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$VARICES[!is.na(hepatitis$VARICES)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$VARICES)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$VARICES[Na] <- result
+
+### Na values of Bilirubin
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$BILIRUBIN[!is.na(hepatitis$BILIRUBIN)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$BILIRUBIN)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$BILIRUBIN[Na] <- result
+
+### Na values for eALK Phosphate
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$`eALK PHOSPHATE`[!is.na(hepatitis$`eALK PHOSPHATE`)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$`eALK PHOSPHATE`)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$`eALK PHOSPHATE`[Na] <- result
+
+### Na values for SGOT
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$SGOT[!is.na(hepatitis$SGOT)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$SGOT)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$SGOT[Na] <- result
+
+### Na values for Albumin
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$ALBUMIN[!is.na(hepatitis$ALBUMIN)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$ALBUMIN)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$ALBUMIN[Na] <- result
+
+### Na values for Protime
+
+#creates vector for gender data
+cleanHepatitisData <- hepatitis$PROTIME[!is.na(hepatitis$PROTIME)]
+
+#finding out mode from cleaned dataset without having NA
+result <- getmode(cleanHepatitisData)
+
+#getting boolean values for NA
+Na <- is.na(hepatitis$PROTIME)
+
+#Replacing NA with mode of gender from cleaned dataset
+hepatitis$PROTIME[Na] <- result
+
+
+```
+
+```{r}
+####### Correlation Analysis #######
+#creates correlation between the variables
+(correlation <- cor(hepatitis[,15:19]))
+
+#ploting correlation
+corrplot(correlation, method = "square")
+```
+
+```{r}
+####### Normalization of values #######
+
+#scaling the data
+for (i in c(15:19)) {
+  hepatitis[,i] <- scale(hepatitis[,i])
+}
+```
+
+```{r}
+####### Exploratory Plots #######
+
+#creates histogram of all variables 
+for (i in c(1:20)) {
+  hist(as.numeric(hepatitis[,i]), main = as.character(colnames(hepatitis[i])),xlab = colnames(hepatitis[i]))
+}
+```
+
+```{r}
+####### detection of outliers #######
+
+#finding mean and standard variation
+mean <- mean(hepatitis$BILIRUBIN)
+sd <- sd(hepatitis$BILIRUBIN)
+
+#finds outlier score
+hepatitis$outlier_score <- abs((mean - hepatitis$BILIRUBIN)/sd)
+outliers <- hepatitis[which(hepatitis$outlier_score > 1.5*sd),]
+
+#eliminates outliers from the dataset
+(rows <- which(c(rownames(outliers)) %in% rownames(hepatitis)))
+hepatitis <- hepatitis[-rows,]
+```
+
+```{r}
+####### Dummy Codes Coversion #######
+#creating dummy values
+dummy <- dummyVars('~.', data = hepatitis)
+
+#predict the value for training dataset
+hepatitis <- data.frame(predict(dummy, newdata = hepatitis)) 
+```
+
+```{r}
+####### Principal Component Analysis #######
+
+#creating pc values
+pca_hepatitis <- prcomp(hepatitis[,15:19])
+summary(pca_hepatitis)
+
+#plotting the values
+plot(pca_hepatitis, type = "l", main = "Principal Component Analysis")
+
+#take dataset as new dataset
+pca_new_data <- hepatitis
+
+#converts variable into factor
+pca_new_data$Class <- as.factor(pca_new_data$Class)
+
+#defines the control method
+control <- trainControl(method = "repeatedcv", number = 10, repeats = 3)
+
+#train the model with mentioned control method
+model <- train(Class ~ ., data = pca_new_data, method = "lvq", preProcess = c("center", "scale"))               
+
+#shows the importance of each variable
+importance <- varImp(model, scale = FALSE) 
+print(importance)
+
+#plots the importance
+plot(importance)
+```
+
+```{r}
+####### Construction of Training and Testing Dataset #######
+
+#sets the data limit
+set.seed(100)
+
+#size of division of the whole dataset
+size <- 0.8
+
+#makes the sample for training and test daasets 
+index <- sample.int(length(hepatitis$Class), round(length(hepatitis$Class) * size))
+
+#makeing training and validation dataset
+train_sample <- hepatitis[index,]
+test_sample <- hepatitis[-index,]
+
+```
+
+```{r}
+####### Binomial Regession Model
+
+#makes the model 
+binom_model <- glm(as.factor(Class) ~ ., family = binomial, data = hepatitis)
+
+#gives the summary of the model
+summary(binom_model)
+
+#eliminates non-significant variables by stepwise backward elimination method
+step(binom_model, direction = "backward")
+
+#takes above mentioned binomial logistic regression model
+model <- glm(as.factor(Class) ~ AGE + SEX + STEROID.1 + ANOREXIA.1 + 
+    X.LIVER.BIG.1 + SPIDERS.1 + ASCITES.1 + BILIRUBIN + ALBUMIN, family = binomial, 
+    data = hepatitis)
+
+#predicts the values
+test_sample$pred <- predict(model, test_sample, type = "response")
+
+#converts variables into dummy codes
+test_sample$binary <- as.factor(ifelse(test_sample$pred > 0.5, 2, 1))
+
+#makes new variable to measure accuracy
+test_sample <- test_sample %>% 
+  mutate(accurate = 1*(Class == binary))
+
+#calculates accuarcy of the model
+sum(test_sample$accurate/nrow(test_sample))
+```
+
+```{r}
+####### Naive Bayes Model #######
+
+#makes the model
+NBclassifier <- naiveBayes(as.factor(Class) ~ ., data = train_sample)
+print(NBclassifier)
+
+#predicts the values 
+p <- predict(NBclassifier, test_sample, type = "class")
+
+#creates confusion matrix which will give accuracy
+confusionMatrix(p, as.factor(test_sample$Class))
+```
+The accuracy of the model is 62% with (0.4237, 0.806) as 95% confidence Interval
+```{r}
+#######Support Vector Machine #######
+
+#constructs the model
+hepatitis_svm <- ksvm(Class ~ ., data = train_sample,
+kernel = "vanilladot")
+summary(hepatitis_svm)
+
+#uses model to make predictions on testing dataset
+predictions <- predict(hepatitis_svm, test_sample[,-1])
+predictions <- as.factor(ifelse(predictions > 1.5, "2", "1"))
+
+#gives first few observations 
+head(predictions)
+
+#creates the matrix which gives accuracy
+confusionMatrix(predictions, as.factor(test_sample$Class))
+```
+
+```{r}
+####### Model Evaluation #######
+#I have considered 3 classifiers and measured their accuracy.
+
+# Binomial logistic Regression : 92%
+# Naive bayes : 62%
+#Support Vector Machine : 81%
+```
+
+
+
